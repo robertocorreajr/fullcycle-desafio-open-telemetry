@@ -1,0 +1,39 @@
+services:
+  service-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: open-telemetry-service-b
+    environment:
+      - WEATHERAPI_KEY=${WEATHERAPI_KEY}
+      - PORT=8081
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    depends_on:
+      - zipkin
+
+  service-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: open-telemetry-service-a
+    command: ["./server-a"]
+    environment:
+      - PORT=8080
+      - SERVICE_B_URL=http://service-b:8081
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - service-b
+      - zipkin
+
+  zipkin:
+    image: openzipkin/zipkin:2.23
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    restart: unless-stopped
